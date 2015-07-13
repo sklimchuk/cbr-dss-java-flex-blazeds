@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="955" minHeight="600" xmlns:services="services.*" xmlns:valueObjects="valueObjects.*">
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			protected function dataGrid_creationCompleteHandler(event:FlexEvent):void
+			{
+				getAllCustomersResult.token = simpleCustomerServiceDestination.getAllCustomers();
+			}
+			
+			
+			protected function button_clickHandler(event:MouseEvent):void
+			{
+				simpleCustomer.customerName = customerNameTextInput.text;
+				simpleCustomer.customerId = parseInt(customerIdTextInput.text);
+				simpleCustomer.customerType = customerTypeTextInput.text;
+				simpleCustomer.customerAddress = customerAddressTextInput.text;
+				simpleCustomer.entryModifiedDate = entryModifiedDateDateField.selectedDate;
+			}
+			
+			protected function hSlider_creationCompleteHandler(event:FlexEvent):void
+			{
+				getAllCustomersResult2.token = simpleCustomerServiceDestination.getAllCustomers();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:CallResponder id="getAllCustomersResult" result="getAllCustomersCollection.refresh()"/>
+		<services:SimpleCustomerServiceDestination id="simpleCustomerServiceDestination" fault="Alert.show(event.fault.faultString + '\n' + event.fault.faultDetail)" showBusyCursor="true"/>
+		<valueObjects:SimpleCustomer id="simpleCustomer"/>
+		<valueObjects:SimpleCustomer id="simpleCustomer2"/>
+		<s:CallResponder id="getAllCustomersResult2"/>
+		<mx:GroupingCollection2 id="getAllCustomersCollection" source="{getAllCustomersResult.lastResult}">
+			<mx:Grouping>
+				<mx:GroupingField name="customerName"/>
+				<mx:GroupingField name="customerAddress"/>
+			</mx:Grouping>
+		</mx:GroupingCollection2>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Binding source="dataGrid.selectedItem as SimpleCustomer" destination="simpleCustomer"/>
+	
+	<mx:DataGrid x="288" y="19" width="754" height="175" id="dataGrid" creationComplete="dataGrid_creationCompleteHandler(event)" dataProvider="{getAllCustomersResult.lastResult}" editable="false">
+		<mx:columns>
+			<mx:DataGridColumn headerText="customerName" dataField="customerName"/>
+			<mx:DataGridColumn headerText="customerId" dataField="customerId"/>
+			<mx:DataGridColumn headerText="customerType" dataField="customerType"/>
+			<mx:DataGridColumn headerText="customerAddress" dataField="customerAddress"/>
+			<mx:DataGridColumn headerText="entryModifiedDate" dataField="entryModifiedDate"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:Form defaultButton="{button}">
+		<mx:FormItem label="CustomerName">
+			<s:TextInput id="customerNameTextInput" text="{simpleCustomer.customerName}"/>
+		</mx:FormItem>
+		<mx:FormItem label="CustomerId">
+			<s:TextInput id="customerIdTextInput" text="{simpleCustomer.customerId}"/>
+		</mx:FormItem>
+		<mx:FormItem label="CustomerType">
+			<s:TextInput id="customerTypeTextInput" text="{simpleCustomer.customerType}"/>
+		</mx:FormItem>
+		<mx:FormItem label="CustomerAddress">
+			<s:TextInput id="customerAddressTextInput" text="{simpleCustomer.customerAddress}"/>
+		</mx:FormItem>
+		<mx:FormItem label="EntryModifiedDate">
+			<mx:DateField id="entryModifiedDateDateField" selectedDate="{simpleCustomer.entryModifiedDate}"/>
+		</mx:FormItem>
+		<s:Button id="button" label="Submit" click="button_clickHandler(event)"/>
+	</mx:Form>
+	<mx:BarChart x="10" y="202" id="barchart1" width="376" height="337" dataProvider="{getAllCustomersResult.lastResult}" showDataTips="true">
+		<mx:series>
+			<mx:BarSeries displayName="Series 1" xField="customerId" id="barSeries"/>
+		</mx:series>
+		<mx:verticalAxis>
+			<mx:CategoryAxis id="categoryAxis" categoryField="customerName"/>
+		</mx:verticalAxis>
+	</mx:BarChart>
+	
+	
+</s:Application>

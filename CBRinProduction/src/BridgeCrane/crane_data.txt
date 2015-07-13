@@ -1,0 +1,18 @@
+﻿#Crane PlainText CaseBase,,,,,
+#Columns are: Srok,Progib,Iskrivlenie,Skruchivanie,Viazkost,Corrosion,Dopustimo,
+
+Case 0,12,9.03,27.22,7.8,3.9,2.77,Ne dopustimo
+Case 1,14,14.13,33.45,10.05,3.82,3.94,Dopustimo
+Case 2,16,20.1,39.16,12.56,3.73,5.13,Dopustimo
+Case 3,18,25.76,45.58,15.12,3.59,6.33,Dopustimo
+Case 4,20,30.85,51.23,17.62,3.5,7.5,Dopustimo
+Case 5,22,36.04,57.71,20.26,3.43,8.61,Dopustimo
+Case 6,24,41.31,63.86,23.2,3.33,9.74,Dopustimo
+Case 7,26,46.67,69.98,25.75,3.23,10.88,Dopustimo
+Case 8,28,52.3,76.44,28.44,3.13,12.07,Dopustimo
+Case 9,30,57.85,81.94,30.99,3.07,13.22,Dopustimo
+Case 10,32,63.29,88.24,33.86,3.0,14.33,Dopustimo
+Case 11,34,68.71,93.89,36.84,2.92,15.43,Dopustimo
+Case 12,36,74.67,100.19,39.84,2.78,16.59,Dopustimo
+Case 13,38,79.75,105.79,42.64,2.69,17.73,Dopustimo
+Case 14,40,85.2,111.55,45.42,2.63,18.84,Dopustimo

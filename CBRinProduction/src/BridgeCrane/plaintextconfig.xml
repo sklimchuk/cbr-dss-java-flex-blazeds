@@ -1,0 +1,17 @@
+<TextFileConfiguration>
+	<FilePath>BridgeCrane/crane_data.txt</FilePath>
+	<Delimiters>,</Delimiters>
+	<DescriptionClassName>BridgeCrane.CraneDescription</DescriptionClassName>
+	<DescriptionMappings>
+		<Map>Srok</Map>
+		<Map>Progib</Map>
+		<Map>Iskrivlenie</Map>
+		<Map>Skruchivanie</Map>
+		<Map>Viazkost</Map>
+		<Map>Corrosion</Map>
+	</DescriptionMappings>
+	<SolutionClassName>BridgeCrane.CraneSolution</SolutionClassName>
+	<SolutionMappings>
+		<Map>Dopustimo</Map>
+	</SolutionMappings>
+</TextFileConfiguration>

@@ -1,0 +1,129 @@
+
+<model xmlns="http://ns.adobe.com/Fiber/1.0">
+  <annotation name="ActionScriptGeneration">
+    <item name="FullyQualifyReferences">true</item>
+  </annotation>
+  <service name="Areacodeworldwebservice">
+    <annotation name="ActionScriptGeneration">
+      <item name="WSDL-service">AreaCodeWorldWebService</item>
+      <item name="ServiceType">WebService</item>
+      <item name="WSDL">http://ws.fraudlabs.com/areacodeworldwebservice.asmx?wsdl</item>
+      <item name="Package">services.areacodeworldwebservice</item>
+      <item name="WSDL-port">AreaCodeWorldWebServiceSoap</item>
+    </annotation>
+    <annotation name="ServiceTypeGroup">
+      <item name="ServiceBackendType">WebService</item>
+    </annotation>
+    <annotation name="ServiceConfig">
+      <item name="DEFAULT_ENTITY_PACKAGE">valueObjects</item>
+      <item name="WSDL-endpoint">http://ws.fraudlabs.com/areacodeworldwebservice.asmx</item>
+      <item name="LINKED_FILE"></item>
+    </annotation>
+    <function name="AreaCodeWorld" return-type="AREACODEWORLD">
+      <annotation name="analyze group">
+        <item name="analyzed">true</item>
+      </annotation>
+      <annotation name="WSDLName">
+        <item name="AreaCodeWorld">http://ws.fraudlabs.com/,AreaCodeWorld</item>
+        <item name="SOAPAction">http://ws.fraudlabs.com/AreaCodeWorld</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">string,string,string</item>
+        <item name="returnType">AREACODEWORLD</item>
+      </annotation>
+      <parameter name="NPA" type="string"/>
+      <parameter name="NXX" type="string"/>
+      <parameter name="LICENSE" type="string"/>
+    </function>
+  </service>
+  <entity name="AREACODEWORLD">
+    <annotation name="EntityProperties">
+      <item name="EntityOriginalName">AREACODEWORLD</item>
+    </annotation>
+    <annotation name="service Group">
+      <item name="service">Areacodeworldwebservice</item>
+    </annotation>
+    <annotation name="ServerProperties">
+      <item name="IncludeRemoteClass">nonempty</item>
+    </annotation>
+    <annotation name="ActionScriptGeneration">
+      <item name="Package">valueObjects</item>
+    </annotation>
+    <property name="CREDITSAVAILABLE" type="string" required="true"/>
+    <property name="NPA" type="string" required="true"/>
+    <property name="STATE" type="string" required="true"/>
+    <property name="CITY" type="string" required="true"/>
+    <property name="NXX" type="string" required="true"/>
+    <property name="COUNTRY" type="string" required="true"/>
+    <property name="COUNTY" type="string" required="true"/>
+    <property name="LATITUDE" type="float" required="true"/>
+    <property name="LONGITUDE" type="float" required="true"/>
+    <property name="TIMEZONE" type="string" required="true"/>
+    <property name="LATA" type="string" required="true"/>
+    <property name="OBSERVES_DST" type="string" required="true"/>
+    <property name="COUNTY_POPULATION" type="string" required="true"/>
+    <property name="FIPS_COUNTY_CODE" type="string" required="true"/>
+    <property name="MSA_COUNTY_CODE" type="string" required="true"/>
+    <property name="PMSA_COUNTY_CODE" type="string" required="true"/>
+    <property name="CBSA_COUNTY_CODE" type="string" required="true"/>
+    <property name="ZIPCODE_POSTALCODE" type="string" required="true"/>
+    <property name="ZIPCODE_COUNT" type="string" required="true"/>
+    <property name="ZIPCODE_FREQUENCY" type="string" required="true"/>
+    <property name="NEW_NPA" type="string" required="true"/>
+    <property name="NXX_USE_TYPE" type="string" required="true"/>
+    <property name="NXX_INTRO_VERSION" type="string" required="true"/>
+    <property name="OVERLAY" type="string" required="true"/>
+    <property name="OCN" type="string" required="true"/>
+    <property name="COMPANY" type="string" required="true"/>
+    <property name="RATE_CENTER" type="string" required="true"/>
+    <property name="SWITCH_CLLI" type="string" required="true"/>
+    <property name="RC_VERTICAL" type="string" required="true"/>
+    <property name="RC_HORIZONTAL" type="string" required="true"/>
+    <property name="MESSAGE" type="string" required="true"/>
+  </entity>
+  <service name="SimpleCustomerServiceDestination">
+    <annotation name="ActionScriptGeneration">
+      <item name="ServiceType">RemoteObject</item>
+      <item name="Package">services</item>
+      <item name="Destination">SimpleCustomerServiceDestination</item>
+    </annotation>
+    <annotation name="ServiceConfig">
+      <item name="DEFAULT_ENTITY_PACKAGE">valueObjects</item>
+      <item name="contextRoot">/samplewebapp</item>
+      <item name="rootUrl">http://localhost:8080/samplewebapp</item>
+      <item name="LINKED_FILE"></item>
+      <item name="ABSOLUTE_ENDPOINT">http://localhost:8080/samplewebapp/messagebroker/amf</item>
+    </annotation>
+    <annotation name="ServiceTypeGroup">
+      <item name="ServiceBackendType">BlazeDS</item>
+    </annotation>
+    <function name="getAllCustomers" return-type="SimpleCustomer[]">
+      <annotation name="analyze group">
+        <item name="analyzed">true</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="returnType">SimpleCustomer</item>
+      </annotation>
+    </function>
+  </service>
+  <entity name="SimpleCustomer">
+    <annotation name="EntityProperties">
+      <item name="EntityOriginalName">SimpleCustomer</item>
+    </annotation>
+    <annotation name="ServerProperties">
+      <item name="RemoteClass">com.adobe.objects.SimpleCustomer</item>
+      <item name="IncludeRemoteClass">nonempty</item>
+    </annotation>
+    <annotation name="service Group">
+      <item name="service">SimpleCustomerServiceDestination</item>
+    </annotation>
+    <annotation name="ActionScriptGeneration">
+      <item name="Package">valueObjects</item>
+    </annotation>
+    <property name="customerName" type="string"/>
+    <property name="customerId" type="integer"/>
+    <property name="customerType" type="string"/>
+    <property name="customerAddress" type="string"/>
+    <property name="entryModifiedDate" type="date"/>
+  </entity>
+</model>

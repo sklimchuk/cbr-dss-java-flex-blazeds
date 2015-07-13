@@ -1,0 +1,613 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   height="100%" minHeight="768" width="100%" minWidth="1024"
+			   creationComplete="" initialize="init()">
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+		<s:RemoteObject id="crane" destination="BridgeCraneDestination"
+						showBusyCursor="true" 
+						fault="Alert.show(event.fault.faultString, 'Error');"/>
+		
+		<!--<s:RemoteObject id="craneUtil" destination="UtilDestination" />-->
+		
+		<s:RemoteObject id="craneUtil" destination="UtilDestination" result="resultHandler(event)" 
+						fault="Alert.show(event.fault.faultString, 'Error to Klimchuk :)');"/>
+		<!--Теги result и fault с ассоцированными процедурами не обязательны, эти процедуры лишь для уточняющего разбора возвращаемых значений-->
+		
+		<mx:NumberValidator source="{corTI, iskrTI, progTI, skrTI, viazkTI, srokTI}" property="text" 
+							integerError="Enter Real value" minValue="1" maxValue="100" domain="real"/>
+		<!--<mx:NumberValidator source="{srokTI}" property="text" integerError="Enter Integer value"
+							minValue="1" maxValue="100" domain="int"/>	-->
+		<mx:StringValidator source="{idTI}" property="text" minLength="6" maxLength="10"	
+							tooShortError="Необходимо мин. 6 символов" tooLongError="Необходимо макс. 10 символов"/>
+		
+	<!--	<fx:XMLList id="menuXML">
+			<fx:menuitem label="File">
+				<fx:menuitem label="New" data="New" />
+				<fx:menuitem label="Open" data="Open" />
+				<fx:menuitem label="Save" data="Save" />
+				<fx:menuitem label="Exit" data="Exit" />
+			</fx:menuitem>
+			<fx:menuitem label="Edit">
+				<fx:menuitem label="Cut" data="Cut" />
+				<fx:menuitem label="Copy" data="Copy" />
+				<fx:menuitem label="Paste" data="Paste" />
+			</fx:menuitem>
+			<fx:menuitem label="Retain" />
+		</fx:XMLList>-->
+		
+		<fx:Array id="cmbDP">
+			<fx:String>Item 1</fx:String>
+			<fx:String>Item 2</fx:String>
+			<fx:String>Item 3</fx:String>
+		</fx:Array>
+	</fx:Declarations>
+	
+	<fx:Script>
+	<![CDATA[
+		import mx.collections.ArrayCollection;
+		import mx.collections.Sort;
+		import mx.collections.SortField;
+		import mx.controls.Alert;
+		import mx.events.ListEvent;
+		import mx.utils.ArrayUtil;
+		import mx.utils.StringUtil;
+		
+		import vo.CraneDescription;
+		import vo.Publisher; 
+		//это для реализации динамической фильтрации датагрида
+		
+		
+
+		private var queryData:Array = new Array();
+		[Bindable] //чтобы можно было привязывать к гриду 
+		private var initCasesToDG:ArrayCollection; //начальная выборка прецедентов
+		[Bindable]
+		private var retrievedCasesToDG:ArrayCollection; //уже отобранные прецеденты
+		
+		private function searchCases():void{
+		
+			//Как померять время выполнения операции в милисекундах:
+			//+До операции:
+			var time:Number;
+			time = getTimer();
+			
+			var myTime:Date = new Date();
+			//This returns the seconds, minutes and the hour.
+			var theSeconds=myTime.getSeconds();
+			var theMinutes=myTime.getMinutes();
+			var theHours=myTime.getHours(); 
+			
+			timeLabel.text = "Время ДО: "+theHours+":"+theMinutes+":"+theSeconds;
+						
+		/* 	queryData[0] = numCases.value.toString();
+			queryData[1] = corTI.text;
+			queryData[2] = idTI.text;
+			queryData[3] = iskrTI.text;
+			queryData[4] = progTI.text;
+			queryData[5] = skrTI.text;
+			queryData[6] = srokTI.text;
+			queryData[7] = viazkTI.text;
+			
+			//здесь идет запрос в джаву, а через lastResult или resultHandler результат уже вынимается и обрабатывается
+			craneUtil.getRetrievedCases(queryData);   
+			
+			craneUtil.getInitialCasesLight(); */
+			//---------------------------------------------до этой линии все было первоначально	
+				
+			//String nameParam = input.get(20); 					//Пример: input.get(x)="Progib"
+			//String similTypeParam = input.get(21); 				//Пример: input.get(21)="Interval"
+			//double weightParam = Double.parseDouble(input.get(22)); 		//Пример: input.get(22)=0.8 
+			//int parenthesesNumber = Integer.parseInt(input.get(23));		//Пример: input.get(23)=34 
+			//boolean isUseParam = Boolean.parseBoolean(input.get(24));		//Пример: input.get(24)=true
+			
+			
+			//проверим работу с коллекцией
+			if(isRetrieveEnabled.selected == true){
+				queryData[0] = numCases.value.toString();
+				queryData[1] = corTI.text;
+				queryData[2] = idTI.text;
+				queryData[3] = iskrTI.text;
+				queryData[4] = progTI.text;
+				queryData[5] = skrTI.text;
+				queryData[6] = srokTI.text;
+				queryData[7] = viazkTI.text;
+				
+				//сейчас попробуем передачу функций подобия
+				queryData[8]  = "Corrosion";
+				queryData[9]  = corrSimilTypeCombo.selectedItem;
+				queryData[10] = corrWeightSlider.value.toString();//по умолчанию = "1"
+				queryData[11] = corrParamTI.text;
+				queryData[12] = corrIsUseCheck.selected.toString();//"true"; //будем ли использовать этот параметр
+				queryData[13] = "Iskrivlenie";
+				queryData[14] = iskrSimilTypeCombo.selectedItem;
+				queryData[15] = iskrWeightSlider.value.toString();//по умолчанию = "1"
+				queryData[16] = iskrParamTI.text;
+				queryData[17] = iskrIsUseCheck.selected.toString();//"true"; 
+				queryData[18] = "Progib";
+				queryData[19] = progSimilTypeCombo.selectedItem;
+				queryData[20] = progWeightSlider.value.toString();//по умолчанию = "1"
+				queryData[21] = progParamTI.text;
+				queryData[22] = progIsUseCheck.selected.toString();//"true"; 
+				queryData[23] = "Skruchivanie";
+				queryData[24] = skrSimilTypeCombo.selectedItem;
+				queryData[25] = skrWeightSlider.value.toString();//по умолчанию = "1"
+				queryData[26] = skrParamTI.text;
+				queryData[27] = skrIsUseCheck.selected.toString();//"true"; 
+				queryData[28] = "Srok";
+				queryData[29] = srokSimilTypeCombo.selectedItem;
+				queryData[30] = srokWeightSlider.value.toString();//по умолчанию = "1"
+				queryData[31] = srokParamTI.text;
+				queryData[32] = srokIsUseCheck.selected.toString();//"true"; 
+				queryData[33] = "Viazkost";
+				queryData[34] = viazSimilTypeCombo.selectedItem;
+				queryData[35] = viazWeightSlider.value.toString();//по умолчанию = "1"
+				queryData[36] = viazParamTI.text;
+				queryData[37] = viazIsUseCheck.selected.toString();//"true"; 
+				
+				yourChooseLabel.text = "Ваш запрос: " + idTI.text + " / кор = " + corTI.text + " / прог = " +  progTI.text + " / искр = "  +
+					iskrTI.text + " / срок = " + srokTI.text + " / скруч = " + skrTI.text + " / вяз = " + viazkTI.text;
+				
+				//здесь идет запрос в джаву, а через lastResult или resultHandler результат уже вынимается и обрабатывается
+				craneUtil.getRetrievedCases(queryData); 
+								
+				retrievedCasesToDG = craneUtil.getRetrievedCases.lastResult as ArrayCollection;
+						
+				mainDG.dataProvider = retrievedCasesToDG;
+				//Alert.show("columnchart1.dataProvider = retrievedCasesToDG;");
+				
+				//Работает только после 2-го нажатия, такой side-effect замечен и в других xml
+				//Из-за того, что приходится второй раз нажимать кнопку поиска,
+				//показывает предыдущий набор из ArrayCollection
+				//columnchart1.dataProvider = retrievedCasesToDG;
+				
+				
+				
+			}else{
+				mainDG.dataProvider.removeAll();// = null;	//для очистки грида можно присмотреть решение по-элегантнее...		
+								
+				craneUtil.getInitialCasesLight(); //было: craneUtil.getInitialCasesLight(); 
+				initCasesToDG = craneUtil.getInitialCasesLight.lastResult as ArrayCollection; //было: initCasesToDG = craneUtil.getInitialCasesLight.lastResult as ArrayCollection;
+				//можно использовать программную сортировку: mainDG.dataProvider = sortCollection(initCasesToDG, "viazkost");
+				mainDG.dataProvider = initCasesToDG; //.list;//но работает и без .list
+						
+			} 
+			
+			myTime = new Date();
+			//This returns the seconds, minutes and the hour.
+			theSeconds=myTime.getSeconds();
+			theMinutes=myTime.getMinutes();
+			theHours=myTime.getHours(); 
+			timeLabel.text += "   Время ПОСЛЕ: "+theHours+":"+theMinutes+":"+theSeconds;
+			
+			yourChooseLabel.text += " ДО:" + time.toString();
+			//+После операции:			
+			time = getTimer()-time;
+			yourChooseLabel.text += " ПОСЛЕ: " + getTimer().toString();
+			yourChooseLabel.text += " Разница: " + time.toString();
+			 
+																	
+			//mainDG.selectedIndex = 0; //станавливаем 1-ю строку датагрида всегда выделенной для отображения ее содержимого в TextInput'ах
+		}
+				
+		//import mx.rpc.events.FaultEvent;
+		import mx.rpc.events.ResultEvent;
+		import mx.utils.ObjectUtil;
+		private function resultHandler(event:ResultEvent):void
+		{
+			//testDGInitDataProvider= event.result  as ArrayCollection;//event.result as String;
+			//Alert.show( ObjectUtil.toString(event.result) );
+			
+		}
+		
+		//Попробуем сделать фильтрацию содержимого датагрида
+		//Взято отсюда: http://blog.bobklaas.com/?p=126
+		//Create Event Listeners on Application initilization
+		private function init():void{
+			
+			txtFilter.addEventListener(Event.CHANGE, filterGrid);
+			searchCases(); //чтобы датагрид заполнялся при загрузке страницы
+			
+			menuBarCollection = new XMLListCollection(menubarXML);
+
+		}
+		//Filter Whole Datagrid by user inputed text
+		private function filterGrid(event:Event):void{
+			/* To get this function to work, only edit variables filterText, columnArray, gridDataProvider, and dataGridName. 
+			Everything else is dynamic. Do not edit variable names. */
+			//Trimmed text String to filter by
+			var filterText:String = StringUtil.trim(txtFilter.text.toLowerCase()); 
+			//Datagrid column names to filter on
+			var columnArray:Array = ['similarity','id','corrosion', 'srok', 'progib', 'iskrivlenie', 
+				'skruchivanie', 'viazkost', 'dopustimo'];
+			//ArrayList<CraneAllFields> из Java преобразуется в ActionScript в ArrayCollection
+			//Name of datagrid's dataprovider. In this case e.g. databases
+			
+			var gridDataProvider:ArrayCollection; //сделал так для фильтрации в начальных и отобранных прецедентах
+			if(isRetrieveEnabled.selected == true){
+				//var gridDataProvider:ArrayCollection = craneUtil.getRetrievedCases.lastResult as ArrayCollection;
+				gridDataProvider = craneUtil.getRetrievedCases.lastResult as ArrayCollection;
+			}else{
+				gridDataProvider = craneUtil.getInitialCasesLight.lastResult as ArrayCollection;
+			}
+						
+			var dataGridName:String = 'mainDG'; //Name of the datagrid you are filtering by
+			
+			//Do not edit code past this point
+			var filteredData:Array = [];
+			var added:Boolean=false;
+			var i:int;
+			var j:int;
+			
+			// Loop Through Grid
+			for(i=0; i < gridDataProvider.length; i++){    
+				added = false;
+				
+				//Loop through grid column
+				for(j=0; j<columnArray.length; j++){            
+					if(gridDataProvider[i][columnArray[j]]!=null){
+						
+						//Grab datagrid cell contents, trim it, and convert to lowercase for comparison.
+						var filterString:String = gridDataProvider[i][columnArray[j]].toString().toLowerCase();
+						
+						//Compare the datagrid string(filterString) to the user typed string(filterText).  
+						if(!added){      
+							//If the datagrid string matches the users string, put it into the array.
+							if(filterString.indexOf(filterText) != -1){
+								filteredData.push(gridDataProvider[i]);
+								added = true;
+							} 
+						}else{
+							//Do nothing, break out.
+							break;
+						}
+					}    
+				}
+			}
+									
+			//Set datagrid dataprovider
+			if(filterText.length == 0){
+				this[dataGridName].dataProvider = gridDataProvider; //Display the original unfiltered data
+			}else{
+				this[dataGridName].dataProvider = filteredData; //Pusht he filtered data into the datagrid
+			}
+		}
+		
+		//Реализация сортировки ArrayCollection по заданному имени поля. озвращает отсортированную коллекцию
+		//Взято отсюда: http://flex-apollo.blogspot.com/2009/07/sorting-arraycollection.html
+		public function sortCollection(arrayCollection:ArrayCollection, nameFieldToSort:String ) : ArrayCollection
+		{
+			//Create the sort field
+			var dataSortField:SortField = new SortField();
+			
+			//name of the field of the object on which you wish to sort the Collection
+			dataSortField.name = nameFieldToSort;//"viazkost";
+			dataSortField.caseInsensitive = true;
+			dataSortField.numeric = true;
+			
+			//If you wish to perform numeric sort then set: dataSortField.numeric = true;
+						
+			//create the sort object
+			var dataSort:Sort = new Sort();
+			dataSort.fields = [dataSortField];
+			
+			arrayCollection.sort = dataSort;
+			//refresh the collection to sort
+			arrayCollection.refresh();
+			
+			Alert.show("сортировка по "+nameFieldToSort+" завершена.");
+			return arrayCollection;
+			
+		}
+		
+			
+		private function setRetainedCase():void{
+			
+			//этот блок обновляет поля прецедента перед записью into persistence
+			//пустые поля сохранять не получается: выдается ошибка java.lang.NumberFormatException : empty String
+			queryData[1] = corTI.text;
+			queryData[2] = idTI.text;
+			queryData[3] = iskrTI.text;
+			queryData[4] = progTI.text;
+			queryData[5] = skrTI.text;
+			queryData[6] = srokTI.text;
+			queryData[7] = viazkTI.text;
+			//опробуем сделать адаптацию - Retain - сохранение в базе
+			craneUtil.setRetainedCase(queryData);
+			
+		}
+		//http://help.adobe.com/en_US/flex/using/WS842193BB-33E4-4bdc-9FD8-D76515B11FAE.html
+		
+		import mx.collections.XMLListCollection;
+		import mx.events.MenuEvent;
+		[Bindable]//[Bindable], т.к. привязывается к <mx:MenuBar через dataProvider
+		public var menuBarCollection:XMLListCollection;
+		//Структура главного меню в одной переменной
+		private var menubarXML:XMLList =
+			<>
+				<menuitem label="Menu1" data="top">
+					<menuitem label="MenuItem 1-A" data="1A"/>
+					<menuitem label="MenuItem 1-B" data="1B"/>
+				</menuitem>
+				<menuitem label="Menu2" data="top">
+					<menuitem label="MenuItem 2-A" type="check" data="2A"/>
+					<menuitem type="separator"/>
+					<menuitem label="MenuItem 2-B" >
+						<menuitem label="SubMenuItem 3-A" type="radio"
+							groupName="one" data="3A"/>
+						<menuitem label="SubMenuItem 3-B" type="radio"
+							groupName="one" data="3B"/>
+					</menuitem>
+				</menuitem>
+			</>;
+
+		private function menuHandler(evt:MenuEvent):void  {
+			// Don't open the Alert for a menu bar item that 
+			// opens a popup submenu.
+			if (evt.item.@data != "top") {
+				Alert.show("Label: " + evt.item.@label + "\n" + "Data: " + evt.item.@data, "Clicked menu item");
+			}
+			if (evt.item.@data == "2A")
+				Alert.show("A Serega molodec :)"); //это пример управления вызовом меню
+		}
+
+		//Delete row at ArrayCollection
+		private function deleteRow():void{
+			//Alert.show(mainDG.selectedIndex.toString());
+			retrievedCasesToDG.removeItemAt(mainDG.selectedIndex);
+			mainDG.dataProvider = retrievedCasesToDG;
+						
+		}
+		//Change row at ArrayCollection
+		private function changeRow():void{
+			var selectedRow:int = mainDG.selectedIndex;
+			//Alert.show(mainDG.selectedIndex.toString());
+			retrievedCasesToDG.source[selectedRow].id 			= idTI.text;
+			retrievedCasesToDG.source[selectedRow].similarity 	= "---";
+			retrievedCasesToDG.source[selectedRow].corrosion 	= corTI.text;
+			retrievedCasesToDG.source[selectedRow].srok 		= srokTI.text;
+			retrievedCasesToDG.source[selectedRow].progib 		= progTI.text;
+			retrievedCasesToDG.source[selectedRow].iskrivlenie 	= iskrTI.text;
+			retrievedCasesToDG.source[selectedRow].skruchivanie = skrTI.text;
+			retrievedCasesToDG.source[selectedRow].viazkost 	= viazkTI.text;
+			
+			mainDG.dataProvider = retrievedCasesToDG;
+			
+		}	
+		
+
+		protected function button1_clickHandler(event:MouseEvent):void
+		{
+ 			var cd:CraneDescription = new CraneDescription();
+			
+			//поля объекта сериализуются, но до Java не доходят
+			//для сравнения используем: import mx.utils.ObjectUtil; ObjectUtil.compare(object1, object2) == 0
+		 	cd.id = "test";
+			cd.Srok = 15;
+	 		/* cd.Corrosion = 5.1;
+			cd.Progib = 8.1;
+			cd.Skruchivanie = 4.1; //проверим на пустое значение
+			cd.Viazkost = 1.1;
+			cd.Iskrivlenie = 6.5; */
+			craneUtil.voTest(cd); //шаг 1: посылаем данные to Java
+			//yourChooseLabel.text = craneUtil.voTest.lastResult as String;
+			
+			//по невыясненной пока причине не передаются поля типа Number...
+			
+			cd = craneUtil.voTest.lastResult;// as CraneDescription; //шаг 2: принимаем данные из Java
+			yourChooseLabel.text = cd.id + " / " + cd.Srok + " / ";// + cd.Progib;//cdIn.Corrosion.toString();
+
+			/* 
+			//Этот код работает!!!
+			var pub:Publisher = new Publisher();
+			pub.name = "Serge";
+			pub.price=55.8;
+			craneUtil.voTest(pub); //шаг 1: посылаем данные to Java
+			pub = craneUtil.voTest.lastResult;
+			//yourChooseLabel.text = craneUtil.voTest.lastResult as String; //шаг 2: принимаем данные из Java
+			yourChooseLabel.text = pub.name + " / " + pub.price; 
+			 */
+		}
+
+	]]>
+		
+	</fx:Script>
+	
+	<s:Panel title="СППР диагностики кранов мостового типа"  height="100%" width="100%"   enabled="true" x="0" y="0">
+		<s:controlBarContent>
+			<mx:MenuBar labelField="@label" itemClick="menuHandler(event);" 
+						dataProvider="{menuBarCollection}" height="1%"/>
+
+			<mx:HBox paddingBottom="5" paddingTop="5">
+				<mx:ComboBox dataProvider="{cmbDP}" />
+				<mx:Spacer width="100%" />
+				<mx:TextInput id="myTI" text="" />
+				<mx:Button id="srch1" label="Search"
+						   click="Alert.show('Searching');" />
+			</mx:HBox>
+			<s:Label text="Label" width="528" height="22" id="timeLabel"/>
+			<!--<s:Button label="control 1" />
+			<mx:Spacer width="100%" />
+			<s:Button label="control 2" />
+			<mx:Spacer width="100%" />
+			<s:Button label="control 3" />-->
+		</s:controlBarContent>
+	
+
+		<s:Button label="Поиск!" click="searchCases()" toolTip="Повторный клик приводит к выводу результатов по умолчанию (т.к. очищаются TextInputs)"
+				  width="103" height="23" y="10" x="767"/>
+		
+		<!--<mx:DataGrid dataProvider="{crane.getInitCases.lastResult}" x="10" y="6" width="863" height="262" 
+					 id="mainDG" allowMultipleSelection="true" editable="false" click="caclmainDG()" 
+		>
+		</mx:DataGrid>-->
+		<!--//.lastResult не обязателен!-->
+		<mx:DataGrid dataProvider="{craneUtil.getRetrievedCases.lastResult}" x="11" y="37" width="863" 
+					 height="191" id="mainDG" allowMultipleSelection="true" editable="false" 
+					 click=""    selectedIndex="0" toolTip="Параметры по умолчанию в Java: Искривление = 94.48, Коррозия = 8, Прогиб = 30, Скручивание = 35.74, Срок = 34, Вязкость = 2">
+			<!--Для обработки клика по строке использовать itemClick="mainDGItemSelect()"-->
+			<mx:columns>
+				<!--Колонки будут располагаться в указанной здесь последовательности 
+				<mx:DataGrid creationComplete="loadData()"/>-->
+				<mx:DataGridColumn dataField="id" 			headerText="ID" />
+				<mx:DataGridColumn dataField="similarity" 	headerText="Подобие" />
+				<mx:DataGridColumn dataField="corrosion" 	headerText="Коррозия" />
+				<mx:DataGridColumn dataField="srok" 		headerText="Срок" />
+				<mx:DataGridColumn dataField="progib" 		headerText="Прогиб" />
+				<mx:DataGridColumn dataField="iskrivlenie" 	headerText="Искривление" />
+				<mx:DataGridColumn dataField="skruchivanie" headerText="Скручивание" />
+				<mx:DataGridColumn dataField="viazkost" 	headerText="Вязкость" />
+				<mx:DataGridColumn dataField="dopustimo" 	headerText="Допустимо?" />
+			</mx:columns>
+		</mx:DataGrid>
+		
+		<mx:DataGrid x="825" y="351" width="76" height="130" id="testDG"	
+					 	 >
+					
+		</mx:DataGrid>
+		
+		<mx:Form width="335" color="0x323232" paddingTop="0" x="10" y="264" height="235">
+			<!--defaultButton="{sendMessage}"-->
+			<mx:FormHeading fontSize="11"  label="Значения параметров для поиска" paddingTop="0"  width="301" color="#212AD9" paddingRight="0" paddingLeft="0" textAlign="left"/>
+			
+			<mx:FormItem label="id">
+				<s:TextInput id="idTI"  width="200" text="{mainDG.selectedItem.id}" />
+				<!--text="Case 11" click="searchCases()"-->
+			</mx:FormItem>
+			
+			<mx:FormItem label="Коррозия" required="true" borderVisible="true" width="295">
+				<s:TextInput id="corTI"  width="200" text="{mainDG.selectedItem.corrosion}" 
+							 restrict="0-9." />
+				<!-- maxChars="10" restrict="a-zA-Z " restrict="a-zA-Z '\-"  restrict="0-9 .()\-"
+				For example, to exclude only numbers from a TextInput, change the property 
+				to  restrict="^0-9", allowing entry of anything except 0–9. 
+				Для округления: способ 1 - <mx:NumberFormatter id="numberFormatter" rounding="down"/>
+				способ 2 - Math.floor()-->
+				<!--text="8"  click="searchCases()"-->
+			</mx:FormItem>
+						
+			<mx:FormItem label="Искривление" required="false">
+				<s:TextInput id="iskrTI"  width="200" text="{mainDG.selectedItem.iskrivlenie}"
+							 restrict="0-9."/>
+				<!--text="94.48" click="searchCases()"-->
+			</mx:FormItem>
+			
+			<mx:FormItem label="Прогиб">
+				<s:TextInput id="progTI" width="200" text="{mainDG.selectedItem.progib}" 
+							 restrict="0-9."/>
+				<!--text="30"-->
+			</mx:FormItem>
+			
+			<mx:FormItem label="Скручивание">
+				<s:TextInput id="skrTI" width="200" text="{mainDG.selectedItem.skruchivanie}"
+							 restrict="0-9."/>
+				<!--text="35.74"-->
+			</mx:FormItem>
+			
+			<mx:FormItem label="Срок">
+				<s:TextInput id="srokTI" width="200" text="{mainDG.selectedItem.srok}"
+							 restrict="0-9."/>
+				<!--text="34.0"-->
+			</mx:FormItem>
+					
+			<mx:FormItem label="Вязкость">
+				<s:TextInput id="viazkTI" width="200" text="{mainDG.selectedItem.viazkost}"
+							 restrict="0-9."/>
+				<!--text="2"-->
+			</mx:FormItem>
+			
+		</mx:Form>	
+		<s:TextInput id="txtFilter" x="12" y="10"  width="190"  toolTip="Строка для фильтрации таблицы"
+					 />
+		
+		<s:NumericStepper id="numCases" value="7" minimum="1" maximum="1000" change="searchCases()"
+						  x="583" y="9" width="71" toolTip="Количество отбираемых прецедентов"/>
+		<!-- у NumericStepper стоял обработчик клика: click="searchCases()" , здесь это давало задержки на 
+		1 итерацию в отображении жанных в гриде и графике, должен быть: change=-->
+		<s:ToggleButton x="220" y="10" label="{isRetrieveEnabled.selected == true? 'Режим отбора прецедентов ВКЛючен' : 'Режим отбора прецедентов ВЫКЛючен'}" width="269" selected="true" 
+						id="isRetrieveEnabled" chromeColor="#CDDEF9"/>
+	
+		<s:Button x="14" y="507" label="Адаптация прецедента (RETAIN)" id="adaptBTN" click="setRetainedCase()" width="242" />
+		
+		<s:ComboBox id="corrSimilTypeCombo" change="" width="116" x="413" y="320"  
+					selectedIndex="1" >
+			<s:dataProvider>
+				<s:ArrayList>
+					<fx:String>Equal</fx:String> <fx:String>Interval</fx:String> <fx:String>Threshold</fx:String>
+				</s:ArrayList>
+			</s:dataProvider>
+			<!--для управления видимостью других элементов лучше использовать change="" вместо click=""-->
+		</s:ComboBox>
+		
+		<s:HSlider x="642" y="320" width="104" height="23" minimum="0" maximum="1" stepSize="0.1" 
+				   value="1" id="corrWeightSlider" toolTip="Вес параметра = {corrWeightSlider.value}" />
+		
+		<!--<s:TextInput x="537" y="321" width="92" id="corrParamTI"/>-->
+		<s:TextInput id="corrParamTI" visible="{corrSimilTypeCombo.selectedItem == 'Equal' ? false : true}" x="537" y="321" width="92"  text="18.84"/>
+		
+		<s:ComboBox id="iskrSimilTypeCombo" change="" width="116" x="413" y="350"  
+					selectedIndex="1" dataProvider="{corrSimilTypeCombo.dataProvider}"> 
+		</s:ComboBox>
+		<s:HSlider x="642" y="350" width="104" height="23" minimum="0" maximum="1" stepSize="0.1" 
+				   value="1" id="iskrWeightSlider" toolTip="Вес параметра = {iskrWeightSlider.value}" />
+		<s:TextInput visible="{iskrSimilTypeCombo.selectedItem == 'Equal' ? false : true}" x="537" y="351" width="92" id="iskrParamTI" text="111.55"/>
+		<s:ComboBox id="progSimilTypeCombo" change="" width="116" x="413" y="376"  
+					selectedIndex="1" dataProvider="{corrSimilTypeCombo.dataProvider}"> 
+		</s:ComboBox>
+		<s:HSlider x="642" y="376" width="104" height="23" minimum="0" maximum="1" stepSize="0.1" 
+				   value="1" id="progWeightSlider" toolTip="Вес параметра = {progWeightSlider.value}" />
+		<s:TextInput visible="{progSimilTypeCombo.selectedItem == 'Equal' ? false : true}" x="537" y="377" width="92" id="progParamTI" text="85.2"/>
+		<s:ComboBox id="skrSimilTypeCombo" change="" width="116" x="413" y="403" 
+					selectedIndex="1" dataProvider="{corrSimilTypeCombo.dataProvider}"> 
+		</s:ComboBox>
+		<s:HSlider x="642" y="403" width="104" height="23" minimum="0" maximum="1" stepSize="0.1" 
+				   value="1" id="skrWeightSlider" toolTip="Вес параметра = {skrWeightSlider.value}" />
+		<s:TextInput visible="{skrSimilTypeCombo.selectedItem == 'Equal' ? false : true}" x="537" y="404" width="92" id="skrParamTI" text="45.42"/>
+		<s:ComboBox id="srokSimilTypeCombo" change="" width="116" x="413" y="431"  
+					selectedIndex="1" dataProvider="{corrSimilTypeCombo.dataProvider}"> 
+		</s:ComboBox>
+		<s:HSlider x="642" y="431" width="104" height="23" minimum="0" maximum="1" stepSize="0.1" 
+				   value="1" id="srokWeightSlider" toolTip="Вес параметра = {srokWeightSlider.value}" />
+		<s:TextInput visible="{srokSimilTypeCombo.selectedItem == 'Equal' ? false : true}" x="537" y="432" width="92" id="srokParamTI" text="40"/>
+		<s:ComboBox id="viazSimilTypeCombo" change="" width="116" x="413" y="461"  
+					selectedIndex="1" dataProvider="{corrSimilTypeCombo.dataProvider}"> 
+		</s:ComboBox>
+		<s:HSlider x="642" y="461" width="104" height="23" minimum="0" maximum="1" stepSize="0.1" 
+				   value="1" id="viazWeightSlider" toolTip="Вес параметра = {viazWeightSlider.value}" />
+		<s:TextInput visible="{viazSimilTypeCombo.selectedItem == 'Equal' ? false : true}" x="537" y="462" width="92" id="viazParamTI" text="3.9"/>
+		
+		<mx:ColumnChart x="10" y="532" id="columnchart1" width="873" height="144" showDataTips="true"
+						dataProvider="{craneUtil.getRetrievedCases.lastResult}">
+			<!--Если ставить dataProvider="{retrievedCasesToDG}", то приложение зависает, не доходя до загрузки.
+			Только с {craneUtil.getRetrievedCases.lastResult} достигается интерактивность-->
+			<mx:horizontalAxis>
+				<mx:CategoryAxis categoryField="id"/>
+			</mx:horizontalAxis> 
+			<mx:series>
+				<mx:ColumnSeries displayName="Коррозия"  xField="id" yField="corrosion"/>
+				<!--<mx:ColumnSeries displayName="Прогиб"  xField="id" yField="progib"/>-->
+				<mx:ColumnSeries displayName="Вязкость"  xField="id" yField="viazkost"/>
+				<mx:ColumnSeries displayName="Срок"  xField="id" yField="srok"/>
+			</mx:series>
+		</mx:ColumnChart>
+		
+		<mx:Legend dataProvider="{columnchart1}" x="796" y="260" width="105" height="83"/>
+		<s:Button x="413" y="260" label="Удалить строку" id="deleteRowBtn" click="deleteRow()"/>
+		<s:Button x="528" y="260" label="Изменить строку" id="changeRowBtn" click="changeRow()"/>
+		<s:CheckBox x="353" y="436" label="Use?" width="50" selected="true" enabled="true" id="srokIsUseCheck"/>
+		<s:CheckBox x="353" y="408" label="Use?" width="50" selected="true" enabled="true" id="skrIsUseCheck"/>
+		<s:CheckBox x="353" y="381" label="Use?" width="50" selected="true" enabled="true" id="progIsUseCheck"/>
+		<s:CheckBox x="353" y="348" label="Use?" width="50" selected="true" enabled="true" id="iskrIsUseCheck"/>
+		<s:CheckBox x="353" y="466" label="Use?" width="50" selected="true" enabled="true" id="viazIsUseCheck"/>
+		<s:CheckBox x="354" y="322" label="Use?" width="50" selected="true" enabled="true" id="corrIsUseCheck"/>
+		<s:Label x="10" y="236" text="Label" width="864" height="16" id="yourChooseLabel"/>
+		<s:Button x="662" y="260" label="valueObjectsTest" click="button1_clickHandler(event)"/>
+				
+	</s:Panel>	
+
+</s:Application>
+
+
